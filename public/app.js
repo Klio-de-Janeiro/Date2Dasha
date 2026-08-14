@@ -33,13 +33,55 @@
   finalText.textContent =
     config.final?.text ?? "Ты у меня самая лучшая.";
 
+  function getQuestionText(question) {
+    return typeof question === "string"
+      ? question
+      : question?.text ?? "";
+  }
+
+  function renderQuestionContent(rawText) {
+    questionText.replaceChildren();
+    questionText.classList.remove("question--poem");
+
+    // Стихом считаем текст с несколькими ручными переносами.
+    const isPoem =
+      rawText.includes("\n") ||
+      rawText.length > 180;
+
+    if (!isPoem) {
+      questionText.textContent = rawText;
+      return;
+    }
+
+    questionText.classList.add("question--poem");
+
+    // Первый блок до пустой строки — декоративный заголовок.
+    // Остальной текст — читаемый текст стихотворения.
+    const parts = rawText
+      .split(/\n\s*\n/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    const title = document.createElement("span");
+    title.className = "question__poem-title";
+    title.textContent = parts[0] ?? "";
+
+    const body = document.createElement("span");
+    body.className = "question__poem-body";
+    body.textContent = parts.slice(1).join("\n\n");
+
+    questionText.appendChild(title);
+
+    if (body.textContent) {
+      questionText.appendChild(body);
+    }
+  }
+
   function renderQuestion() {
     const question = config.questions[currentIndex];
+    const rawText = getQuestionText(question);
 
-    questionText.textContent =
-      typeof question === "string"
-        ? question
-        : question.text;
+    renderQuestionContent(rawText);
 
     progressText.textContent =
       `${currentIndex + 1} / ${config.questions.length}`;
@@ -49,6 +91,12 @@
     card.classList.remove("is-changing");
     void card.offsetWidth;
     card.classList.add("is-changing");
+
+    // Каждый новый экран возвращаем к началу карточки.
+    card.scrollTo({
+      top: 0,
+      behavior: "auto"
+    });
 
     renderButtons(question);
   }
@@ -115,26 +163,17 @@
   function showFinal() {
     card.classList.add("hidden");
     finalScreen.classList.remove("hidden");
-
     startCelebration();
   }
 
   function resizeCanvas() {
-    const dpr =
-      Math.min(
-        window.devicePixelRatio || 1,
-        2
-      );
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     canvas.width =
-      Math.floor(
-        window.innerWidth * dpr
-      );
+      Math.floor(window.innerWidth * dpr);
 
     canvas.height =
-      Math.floor(
-        window.innerHeight * dpr
-      );
+      Math.floor(window.innerHeight * dpr);
 
     canvas.style.width =
       `${window.innerWidth}px`;
@@ -153,58 +192,44 @@
   }
 
   function createParticle() {
-    const isHeart =
-      Math.random() > 0.42;
+    const isHeart = Math.random() > 0.42;
 
     return {
-      x:
-        Math.random() *
-        window.innerWidth,
-
+      x: Math.random() * window.innerWidth,
       y:
         -30 -
         Math.random() *
         window.innerHeight *
         0.35,
-
       vx:
         (Math.random() - 0.5) *
         1.6,
-
       vy:
         1.5 +
         Math.random() *
         3,
-
       size:
         6 +
         Math.random() *
         10,
-
       rotation:
         Math.random() *
         Math.PI *
         2,
-
       spin:
         (Math.random() - 0.5) *
         0.08,
-
       alpha:
         0.75 +
         Math.random() *
         0.25,
-
       kind:
         isHeart
           ? "heart"
           : "confetti",
-
       hue:
         [330, 345, 10, 290, 320][
-          Math.floor(
-            Math.random() * 5
-          )
+          Math.floor(Math.random() * 5)
         ]
     };
   }
@@ -226,14 +251,11 @@
       size / 18
     );
 
-    ctx.globalAlpha =
-      alpha;
-
+    ctx.globalAlpha = alpha;
     ctx.fillStyle =
       `hsl(${hue} 78% 72%)`;
 
     ctx.beginPath();
-
     ctx.moveTo(0, 5);
 
     ctx.bezierCurveTo(
@@ -258,9 +280,7 @@
     ctx.restore();
   }
 
-  function drawConfetti(
-    particle
-  ) {
+  function drawConfetti(particle) {
     ctx.save();
 
     ctx.translate(
@@ -309,18 +329,10 @@
         window.innerHeight
       );
 
-      for (
-        const particle
-        of particles
-      ) {
-        particle.x +=
-          particle.vx;
-
-        particle.y +=
-          particle.vy;
-
-        particle.rotation +=
-          particle.spin;
+      for (const particle of particles) {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.rotation += particle.spin;
 
         if (
           particle.kind === "heart"
@@ -334,9 +346,7 @@
             particle.hue
           );
         } else {
-          drawConfetti(
-            particle
-          );
+          drawConfetti(particle);
         }
 
         if (
@@ -350,7 +360,6 @@
               x:
                 Math.random() *
                 window.innerWidth,
-
               y: -40
             }
           );
@@ -358,9 +367,7 @@
       }
 
       celebrationFrame =
-        requestAnimationFrame(
-          animate
-        );
+        requestAnimationFrame(animate);
     };
 
     animate();
